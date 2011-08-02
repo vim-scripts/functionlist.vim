@@ -1,0 +1,34 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3681
+
+This plugin displays a list of all lines with word 'function' in current
+file/buffer. This list is sorted on function name. It also maintains a list of
+recently accessed functions at the top so that you can switch between
+functions easily
+
+screen shot http://i56.tinypic.com/11hdhxg.png 
+
+command to open function list
+
+:Flisttoggle 
+
+
+To make this plugin really useful you have to assign a shortcut key for this, 
+say you want F2 key to open the function list.
+
+you can add the following line in your .vimrc file. 
+
+            map <F2> : Flisttoggle <CR>
+
+If you are on windows " the file name would be _vimrc. The .vimrc file is  
+usually present in the users home directory.
+
+vimrc file will be hidden in linux so you will have to do a ls -ah to see it. 
+
+If the file  is not present you can just add one file with this line only.
+
+you have to Restart vim 
+
+Invoking this plugin opens a new vertical  window right to current window
+
+
+
