@@ -1,5 +1,7 @@
-" Functiontracker plugin v1.0
-" Last Change:	2011 july
+" Functiontracker plugin v1.2
+" Bug fixed where it wont index functions with numbers in the name(!!!)
+"
+" Last Change:	2011 Aug
 " Maintainer:	Sandeep.c.r<sandeepcr2@gmail.com>
 "
 " This plugin displays a list of all lines with word 'function' in current
@@ -32,6 +34,12 @@ function! s:switch_wnd(bufno)
 	exe l:thiswin . ' wincmd w'
 endfunction
 
+function! s:goback_to_previous_size()
+	if(winwidth(0) >15 ) 
+		exe 'vertical res 15' 
+	endif
+endfunction
+
 function! s:reindex()
 	let b:lookup = s:index()
 	call s:refresh()
@@ -45,7 +53,7 @@ function! s:iniflist()
 		let l:oldrecentlist = b:filelistrecentlist
 	endif
 	setlocal spr
-	30 vnew 
+	15 vnew 
 	call matchadd('String','.')
 	setlocal nospr
 	let t:flbuf = bufnr('%')
@@ -74,6 +82,8 @@ function! s:iniflist()
 	map <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
     augroup Flistautocommands
 		au BufEnter  <buffer>  call <sid>reindex()
+		au BufEnter  <buffer>  call <sid>resize()
+		au BufLeave  <buffer>  call <sid>goback_to_previous_size()
 		au Bufhidden  <buffer>  call <sid>toggle()
     augroup END
 	
@@ -91,6 +101,13 @@ function! s:iniflist()
 	let b:recbuf = l:recbuf
 	call s:drawrecent()
 	setlocal nomodifiable
+endfunction
+
+function! s:resize()
+	let l:current_size = winwidth(0)
+	if(b:lookup[2] > l:current_size) 
+		exe 'vertical res '. b:lookup[2]
+	endif
 endfunction
 
 function! s:clearsearchbx()
@@ -139,11 +156,16 @@ function! s:index()
 	let l:flistd=[]
 	let l:lookup = {}
 	let l:lnc=0
+	let l:maxlength = 0
 	while (l:lnc < b)
 		let l:line = getline(l:lnc)
-		let l:matched = matchlist(l:line,'\s*function\s\+\([a-zA-Z_]*\)\s*(')
+		let l:matched = matchlist(l:line,'\s*function\s\+[*&]*\([a-zA-Z0-9_]*\)\s*(')
 		if( ! empty(l:matched))
 			let l:line =  ' '.l:matched[1]
+			let l:current_length = strlen(l:line)
+			if(l:current_length > l:maxlength) 
+				let l:maxlength = l:current_length
+			endif
 			call add(l:flistd,l:line)
 			let l:lookup[l:line] = l:lnc
 		endif
@@ -156,12 +178,15 @@ function! s:index()
 		let l:lineno += 1
 	endfor
 	call s:switch_wnd(l:bufnow)
-	return [l:flistd,l:lookup]
+	return [l:flistd,l:lookup,l:maxlength]
 endfunction
 
 function! s:Repos()
 	let l:llindex= line('.')
 	let l:llindex -= 1
+	if(!has_key(b:lookup[1],l:llindex)) 
+		return
+	endif
 	let l:lineno = b:lookup[1][l:llindex]
 	call s:addtorecent(getline('.'),l:llindex)
 	call s:drawrecent()
