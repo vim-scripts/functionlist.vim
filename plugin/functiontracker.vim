@@ -1,4 +1,6 @@
-" Functiontracker plugin v1.2
+" Functiontracker plugin v1.21
+"
+" Added auto resize in recent function list
 " Bug fixed where it wont index functions with numbers in the name(!!!)
 "
 " Last Change:	2011 Aug
@@ -97,6 +99,9 @@ function! s:iniflist()
 	setlocal sidescrolloff=0
 	let l:recbuf = bufnr('%')
 	map <buffer>  <2-leftrelease> :call <sid>ReposRecent()<cr>
+	augroup Flistautocommands
+		au BufEnter  <buffer>  call <sid>resizeRec()
+    augroup END
 	call s:switch_wnd(t:flbuf)
 	let b:recbuf = l:recbuf
 	call s:drawrecent()
@@ -139,6 +144,15 @@ function! s:toggle()
 	endif
 endfunction
 
+function! s:resizeRec()
+	if(exists("b:maxlen"))
+	let l:current_size = winwidth(0)
+		if(b:maxlen > l:current_size) 
+			exe 'vertical res '. b:maxlen
+		endif
+	endif
+endfunction
+
 function! s:refresh()
 	call s:switch_wnd(t:flbuf)
 	setlocal modifiable
@@ -147,6 +161,9 @@ function! s:refresh()
 	endfor
 		call setline(1,b:lookup[0])
 	setlocal nomodifiable
+	if(exists("b:recbuf"))
+		call setbufvar(b:recbuf,"maxlen",b:lookup[2])
+	endif
 endfunction
 
 function! s:index()
