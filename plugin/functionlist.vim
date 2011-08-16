@@ -1,7 +1,10 @@
-" Functiontracker plugin v1.21
+" Functiontracker plugin v1.3
 "
+" Added automatic update of recent function on entering or leaving insert mode
+" while in a function
+"
+" Fixed issue when swithching to window while in insert mode
 " Added auto resize in recent function list
-" Bug fixed where it wont index functions with numbers in the name(!!!)
 "
 " Last Change:	2011 Aug
 " Maintainer:	Sandeep.c.r<sandeepcr2@gmail.com>
@@ -16,7 +19,7 @@
 "
 " you can add the following line in your .vimrc file. 
 "
-"             map <F2> :Tablisttoggle<CR>
+"             map <F2> :Flisttoggle<CR>
 "
 " If you are on windows " the file name would be _vimrc. The .vimrc file is  
 " usually present in the users home directory.
@@ -36,6 +39,15 @@ function! s:switch_wnd(bufno)
 	exe l:thiswin . ' wincmd w'
 endfunction
 
+function! s:place_sign()
+	setlocal cursorline
+	return
+	exec "sign unplace *"
+	exec "sign define lineh linehl=Search texthl=Search" 
+	exec "sign place 10 name=lineh line=".line('.')." buffer=" . t:tlistbuf
+endfunction
+
+
 function! s:goback_to_previous_size()
 	if(winwidth(0) >15 ) 
 		exe 'vertical res 15' 
@@ -43,7 +55,8 @@ function! s:goback_to_previous_size()
 endfunction
 
 function! s:reindex()
-	let b:lookup = s:index()
+	let l:lookup = s:index()
+	call setbufvar(t:flbuf,"lookup",l:lookup)
 	call s:refresh()
 	exe 'normal ^'
 endfunction
@@ -56,8 +69,9 @@ function! s:iniflist()
 	endif
 	setlocal spr
 	15 vnew 
-	call matchadd('String','.')
+	"call matchadd('String','.')
 	setlocal nospr
+	setlocal cursorline
 	let t:flbuf = bufnr('%')
 	let b:srcbuf = l:thisbuf
 	if(exists("l:oldrecentlist"))
@@ -79,13 +93,12 @@ function! s:iniflist()
 	setlocal nomodifiable
 	map <buffer> <silent> <C-R> :call <sid>Repos()<cr>
 	map <buffer> <silent> <C-M> :call <sid>Repos()<cr>
-	map <buffer> <silent> <F5>  :call <sid>toggle()<cr>
 	map <buffer> <silent> r :call <sid>reindex()<cr>
 	map <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
     augroup Flistautocommands
 		au BufEnter  <buffer>  call <sid>reindex()
 		au BufEnter  <buffer>  call <sid>resize()
-		au BufLeave  <buffer>  call <sid>goback_to_previous_size()
+		"au BufLeave  <buffer>  call <sid>goback_to_previous_size()
 		au Bufhidden  <buffer>  call <sid>toggle()
     augroup END
 	
@@ -108,11 +121,16 @@ function! s:iniflist()
 	setlocal nomodifiable
 endfunction
 
+function! s:gotocommandmode()
+	call feedkeys("\<Esc>",'n')
+endfunction
+
 function! s:resize()
 	let l:current_size = winwidth(0)
 	if(b:lookup[2] > l:current_size) 
 		exe 'vertical res '. b:lookup[2]
 	endif
+	call s:gotocommandmode()
 endfunction
 
 function! s:clearsearchbx()
@@ -140,8 +158,19 @@ function! s:toggle()
 			unlet t:flbuf
 		endif
 	else
+		augroup Flistautocommands
+			au InsertEnter <buffer>  call <sid>oninsertchange()
+			au InsertLeave <buffer>  call <sid>oninsertchange()
+		augroup END
 		call s:iniflist()
 	endif
+endfunction
+
+
+function! s:oninsertchange()
+	call s:reindex()
+	call s:switch_wnd(b:srcbuf)
+	call s:getcurrentfunction()
 endfunction
 
 function! s:resizeRec()
@@ -151,6 +180,7 @@ function! s:resizeRec()
 			exe 'vertical res '. b:maxlen
 		endif
 	endif
+	call s:gotocommandmode()
 endfunction
 
 function! s:refresh()
@@ -168,10 +198,13 @@ endfunction
 
 function! s:index()
 	let l:bufnow = bufnr('%')
-	call s:switch_wnd(b:srcbuf)
+	if(exists("b:srcbuf")) 
+		call s:switch_wnd(b:srcbuf)
+	endif
 	let l:b =line('$')
 	let l:flistd=[]
 	let l:lookup = {}
+	let l:lookupl = {}
 	let l:lnc=0
 	let l:maxlength = 0
 	while (l:lnc < b)
@@ -191,11 +224,11 @@ function! s:index()
 	let l:flistd = sort(l:flistd)
 		let l:lineno = 0
 	for l:a in l:flistd
-		let l:lookup[l:lineno] = l:lookup[a]
+		let l:lookupl[l:lineno] = l:lookup[a]
 		let l:lineno += 1
 	endfor
 	call s:switch_wnd(l:bufnow)
-	return [l:flistd,l:lookup,l:maxlength]
+	return [l:flistd,l:lookupl,l:maxlength]
 endfunction
 
 function! s:Repos()
@@ -216,30 +249,40 @@ endfunction
 
 
 function! s:addtorecent(fnc,lno)
-	for l:inc in b:recent
+	let l:idx = 0
+	let l:recent = getbufvar(t:flbuf,"recent")
+	for l:inc in l:recent
 		if(l:inc[0] == a:fnc) 
-			return
+			call remove(l:recent,l:idx)
 		endif
+		let l:idx+=1
 	endfor
-	call insert(b:recent,[a:fnc,a:lno])
-	if(len(b:recent) > 10) 
-		call remove(b:recent,10,-1)
+	call insert(l:recent,[a:fnc,a:lno])
+	if(len(l:recent) > 10) 
+		call remove(l:recent,10,-1)
 	endif
+	call setbufvar(t:flbuf,"recent",l:recent)
 endfunction
 
 function! s:ReposRecent()
-	let l:lix= getline('.')
+	let l:lixl= getline('.')
 	call s:switch_wnd(t:flbuf)
-	let l:lix = b:lookup[1][l:lix]
-	call s:switch_wnd(b:srcbuf)
-	call setpos('.',['.', l:lix,0,0])
-	exe 'normal zz'
+	let l:lix = index(b:lookup[0],l:lixl)
+	if(l:lix != -1)
+		let l:lix = b:lookup[1][l:lix]
+		call s:addtorecent(l:lixl,l:lix)
+		call s:drawrecent()
+		call s:switch_wnd(b:srcbuf)
+		call setpos('.',['.', l:lix,0,0])
+		exe 'normal zz'
+	endif
 endfunction
 
 function! s:drawrecent()	
-	let l:recent = b:recent
-	let l:bufsrc = b:srcbuf
-	call s:switch_wnd(b:recbuf)
+	let l:recent = getbufvar(t:flbuf, 'recent')
+	let l:bufsrc = getbufvar(t:flbuf,'srcbuf')
+	let l:recbuf = getbufvar(t:flbuf,'recbuf')
+	call s:switch_wnd(l:recbuf)
 	let lnu = 1
 	setlocal modifiable
 	for [cnt,lnno] in l:recent
@@ -248,6 +291,22 @@ function! s:drawrecent()
 	endfor
 	setlocal nomodifiable
 	call s:switch_wnd(t:flbuf)
+endfunction
+
+function! s:getcurrentfunction()
+	let l:lineno = search('function','bnW')
+	let l:lookup = getbufvar(t:flbuf,"lookup")
+	if(type(l:lookup)!=3)
+		return
+	endif
+	for l:key in keys(l:lookup[1])
+		if(l:lookup[1][l:key] == l:lineno)
+			call s:addtorecent(l:lookup[0][l:key],l:lineno)
+			call s:drawrecent()
+			let l:bufsrc = getbufvar(t:flbuf,'srcbuf')
+			call s:switch_wnd(l:bufsrc)
+		endif
+	endfor
 endfunction
 
 command! Flisttoggle :call <sid>toggle()
