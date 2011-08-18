@@ -1,5 +1,6 @@
-" Functiontracker plugin v1.3
+" Functiontracker plugin v1.4
 "
+" Made to work with split windows
 " Added automatic update of recent function on entering or leaving insert mode
 " while in a function
 "
@@ -35,8 +36,13 @@
 "
 
 function! s:switch_wnd(bufno)
-	let l:thiswin = bufwinnr(a:bufno)
-	exe l:thiswin . ' wincmd w'
+	let l:last_accessed = t:window_last_accessed
+	if(winbufnr(l:last_accessed) == a:bufno)
+		exe l:last_accessed. ' wincmd w'
+	else
+		let l:thiswin = bufwinnr(a:bufno)
+		exe l:thiswin . ' wincmd w'
+	endif
 endfunction
 
 function! s:place_sign()
@@ -63,7 +69,7 @@ endfunction
 
 function! s:iniflist()
 	let l:thisbuf = bufnr('%')
-
+	let t:window_last_accessed = winnr()
 	if(exists("b:filelistrecentlist"))
 		let l:oldrecentlist = b:filelistrecentlist
 	endif
@@ -91,11 +97,12 @@ function! s:iniflist()
 	call append(0,b:lookup[0])
 	exe 'normal gg'
 	setlocal nomodifiable
-	map <buffer> <silent> <C-R> :call <sid>Repos()<cr>
-	map <buffer> <silent> <C-M> :call <sid>Repos()<cr>
-	map <buffer> <silent> r :call <sid>reindex()<cr>
-	map <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
+	noremap <buffer> <silent> <C-R> :call <sid>Repos()<cr>
+	noremap <buffer> <silent> <C-M> :call <sid>Repos()<cr>
+	noremap <buffer> <silent> r :call <sid>reindex()<cr>
+	noremap <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
     augroup Flistautocommands
+		autocmd! * <buffer>
 		au BufEnter  <buffer>  call <sid>reindex()
 		au BufEnter  <buffer>  call <sid>resize()
 		"au BufLeave  <buffer>  call <sid>goback_to_previous_size()
@@ -113,6 +120,7 @@ function! s:iniflist()
 	let l:recbuf = bufnr('%')
 	map <buffer>  <2-leftrelease> :call <sid>ReposRecent()<cr>
 	augroup Flistautocommands
+		autocmd! * <buffer>
 		au BufEnter  <buffer>  call <sid>resizeRec()
     augroup END
 	call s:switch_wnd(t:flbuf)
@@ -146,12 +154,12 @@ function! s:toggle()
 			call s:switch_wnd(t:flbuf)
 			call s:switch_wnd(b:recbuf)
 			augroup Flistautocommands
-				autocmd!
+				autocmd! * <buffer>
 			augroup END
 			:q!
 			call s:switch_wnd(t:flbuf)
 			augroup Flistautocommands
-				autocmd!
+				autocmd! * <buffer>
 			augroup END
 			:q!
 			:redraw!
@@ -159,18 +167,26 @@ function! s:toggle()
 		endif
 	else
 		augroup Flistautocommands
+			autocmd! * <buffer>
 			au InsertEnter <buffer>  call <sid>oninsertchange()
-			au InsertLeave <buffer>  call <sid>oninsertchange()
+			au InsertEnter <buffer>  call <sid>oninsertchange()
+			au WinLeave <buffer>  call <sid>savelastwindow()
 		augroup END
 		call s:iniflist()
 	endif
 endfunction
-
+function! s:savelastwindow()
+	let t:window_last_accessed = winnr()
+endfunction
 
 function! s:oninsertchange()
-	call s:reindex()
-	call s:switch_wnd(b:srcbuf)
-	call s:getcurrentfunction()
+	if(exists("t:flbuf"))
+		let l:winnr = winnr()
+		call s:reindex()
+		exe l:winnr. ' wincmd w'
+		call s:getcurrentfunction()
+		exe l:winnr. ' wincmd w'
+	endif
 endfunction
 
 function! s:resizeRec()
@@ -295,6 +311,7 @@ endfunction
 
 function! s:getcurrentfunction()
 	let l:lineno = search('function','bnW')
+	echo l:lineno
 	let l:lookup = getbufvar(t:flbuf,"lookup")
 	if(type(l:lookup)!=3)
 		return
