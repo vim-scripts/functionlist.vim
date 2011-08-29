@@ -1,5 +1,11 @@
-" Functiontracker plugin v1.4
+" Functiontracker plugin v1.6
 "
+" Added autocommands for recent access ist so that user may go to a recent
+" item by pressing enter on it
+"
+" Added support for javascript style functions
+" Added support for functions with same name
+" Added keymapping for easy navigation using fuctions first letter
 " Made to work with split windows
 " Added automatic update of recent function on entering or leaving insert mode
 " while in a function
@@ -67,6 +73,10 @@ function! s:reindex()
 	exe 'normal ^'
 endfunction
 
+function! s:Searchfor(char)
+	call search("^ ".a:char)
+endfunction
+
 function! s:iniflist()
 	let l:thisbuf = bufnr('%')
 	let t:window_last_accessed = winnr()
@@ -78,6 +88,7 @@ function! s:iniflist()
 	"call matchadd('String','.')
 	setlocal nospr
 	setlocal cursorline
+	setlocal ignorecase
 	let t:flbuf = bufnr('%')
 	let b:srcbuf = l:thisbuf
 	if(exists("l:oldrecentlist"))
@@ -97,9 +108,62 @@ function! s:iniflist()
 	call append(0,b:lookup[0])
 	exe 'normal gg'
 	setlocal nomodifiable
+	noremap <buffer> <silent> A :call <sid>Searchfor('a')<cr>
+	noremap <buffer> <silent> B :call <sid>Searchfor('b')<cr>
+	noremap <buffer> <silent> C :call <sid>Searchfor('c')<cr>
+	noremap <buffer> <silent> D :call <sid>Searchfor('d')<cr>
+	noremap <buffer> <silent> E :call <sid>Searchfor('e')<cr>
+	noremap <buffer> <silent> F :call <sid>Searchfor('f')<cr>
+	noremap <buffer> <silent> G :call <sid>Searchfor('g')<cr>
+	noremap <buffer> <silent> H :call <sid>Searchfor('h')<cr>
+	noremap <buffer> <silent> I :call <sid>Searchfor('i')<cr>
+	noremap <buffer> <silent> J :call <sid>Searchfor('j')<cr>
+	noremap <buffer> <silent> K :call <sid>Searchfor('k')<cr>
+	noremap <buffer> <silent> L :call <sid>Searchfor('l')<cr>
+	noremap <buffer> <silent> M :call <sid>Searchfor('m')<cr>
+	noremap <buffer> <silent> N :call <sid>Searchfor('n')<cr>
+	noremap <buffer> <silent> O :call <sid>Searchfor('o')<cr>
+	noremap <buffer> <silent> P :call <sid>Searchfor('p')<cr>
+	noremap <buffer> <silent> Q :call <sid>Searchfor('q')<cr>
+	noremap <buffer> <silent> R :call <sid>Searchfor('r')<cr>
+	noremap <buffer> <silent> S :call <sid>Searchfor('s')<cr>
+	noremap <buffer> <silent> T :call <sid>Searchfor('t')<cr>
+	noremap <buffer> <silent> U :call <sid>Searchfor('u')<cr>
+	noremap <buffer> <silent> V :call <sid>Searchfor('v')<cr>
+	noremap <buffer> <silent> W :call <sid>Searchfor('w')<cr>
+	noremap <buffer> <silent> X :call <sid>Searchfor('x')<cr>
+	noremap <buffer> <silent> Y :call <sid>Searchfor('y')<cr>
+	noremap <buffer> <silent> Z :call <sid>Searchfor('z')<cr>
+
+	noremap <buffer> <silent> a :call <sid>Searchfor('a')<cr>
+	noremap <buffer> <silent> b :call <sid>Searchfor('b')<cr>
+	noremap <buffer> <silent> c :call <sid>Searchfor('c')<cr>
+	noremap <buffer> <silent> d :call <sid>Searchfor('d')<cr>
+	noremap <buffer> <silent> e :call <sid>Searchfor('e')<cr>
+	noremap <buffer> <silent> f :call <sid>Searchfor('f')<cr>
+	noremap <buffer> <silent> g :call <sid>Searchfor('g')<cr>
+	noremap <buffer> <silent> h :call <sid>Searchfor('h')<cr>
+	noremap <buffer> <silent> i :call <sid>Searchfor('i')<cr>
+	noremap <buffer> <silent> j :call <sid>Searchfor('j')<cr>
+	noremap <buffer> <silent> k :call <sid>Searchfor('k')<cr>
+	noremap <buffer> <silent> l :call <sid>Searchfor('l')<cr>
+	noremap <buffer> <silent> m :call <sid>Searchfor('m')<cr>
+	noremap <buffer> <silent> n :call <sid>Searchfor('n')<cr>
+	noremap <buffer> <silent> o :call <sid>Searchfor('o')<cr>
+	noremap <buffer> <silent> p :call <sid>Searchfor('p')<cr>
+	noremap <buffer> <silent> q :call <sid>Searchfor('q')<cr>
+	noremap <buffer> <silent> r :call <sid>Searchfor('r')<cr>
+	noremap <buffer> <silent> s :call <sid>Searchfor('s')<cr>
+	noremap <buffer> <silent> t :call <sid>Searchfor('t')<cr>
+	noremap <buffer> <silent> u :call <sid>Searchfor('u')<cr>
+	noremap <buffer> <silent> v :call <sid>Searchfor('v')<cr>
+	noremap <buffer> <silent> w :call <sid>Searchfor('w')<cr>
+	noremap <buffer> <silent> x :call <sid>Searchfor('x')<cr>
+	noremap <buffer> <silent> y :call <sid>Searchfor('y')<cr>
+	noremap <buffer> <silent> z :call <sid>Searchfor('z')<cr>
+	noremap <buffer> <silent> _ :call <sid>Searchfor('_')<cr>
 	noremap <buffer> <silent> <C-R> :call <sid>Repos()<cr>
 	noremap <buffer> <silent> <C-M> :call <sid>Repos()<cr>
-	noremap <buffer> <silent> r :call <sid>reindex()<cr>
 	noremap <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
     augroup Flistautocommands
 		autocmd! * <buffer>
@@ -119,6 +183,8 @@ function! s:iniflist()
 	setlocal sidescrolloff=0
 	let l:recbuf = bufnr('%')
 	map <buffer>  <2-leftrelease> :call <sid>ReposRecent()<cr>
+	noremap <buffer> <silent> <C-R> :call <sid>ReposRecent()<cr>
+	noremap <buffer> <silent> <C-M> :call <sid>ReposRecent()<cr>
 	augroup Flistautocommands
 		autocmd! * <buffer>
 		au BufEnter  <buffer>  call <sid>resizeRec()
@@ -127,6 +193,7 @@ function! s:iniflist()
 	let b:recbuf = l:recbuf
 	call s:drawrecent()
 	setlocal nomodifiable
+	exe bufwinnr(t:flbuf). 'wincmd w'
 endfunction
 
 function! s:gotocommandmode()
@@ -223,15 +290,31 @@ function! s:index()
 	let l:lookupl = {}
 	let l:lnc=0
 	let l:maxlength = 0
-	while (l:lnc < b)
+	while (l:lnc <= b)
 		let l:line = getline(l:lnc)
-		let l:matched = matchlist(l:line,'\s*function\s\+[*&]*\([a-zA-Z0-9_]*\)\s*(')
+		let l:matched = matchlist(l:line,'\s*function\s*[*&]*\([a-zA-Z0-9_]*\)\s*(')
 		if( ! empty(l:matched))
-			let l:line =  ' '.l:matched[1]
+			if(!empty(l:matched[1]))
+				let l:line =  ' '.l:matched[1]
+			else 
+				let l:funcpos = stridx(tolower(l:line),'function')
+				if(l:funcpos>8) 
+					let l:line = '...'.strpart(l:line,l:funcpos-8,17)
+				else 
+					let l:line = strpart(l:line,0,15).'...'
+				endif
+				let l:line =  ' '.l:line
+			endif
 			let l:current_length = strlen(l:line)
 			if(l:current_length > l:maxlength) 
 				let l:maxlength = l:current_length
 			endif
+			let l:suffix= 1
+			let l:lsrc = l:line
+			while(has_key(l:lookup,l:line))
+				let l:line= l:lsrc.'('.l:suffix.')'
+				let l:suffix+= 1
+			endwhile
 			call add(l:flistd,l:line)
 			let l:lookup[l:line] = l:lnc
 		endif
@@ -240,7 +323,8 @@ function! s:index()
 	let l:flistd = sort(l:flistd)
 		let l:lineno = 0
 	for l:a in l:flistd
-		let l:lookupl[l:lineno] = l:lookup[a]
+		let l:index = l:lookup[l:a]
+		let l:lookupl[l:lineno] = l:index
 		let l:lineno += 1
 	endfor
 	call s:switch_wnd(l:bufnow)
@@ -311,7 +395,6 @@ endfunction
 
 function! s:getcurrentfunction()
 	let l:lineno = search('function','bnW')
-	echo l:lineno
 	let l:lookup = getbufvar(t:flbuf,"lookup")
 	if(type(l:lookup)!=3)
 		return
