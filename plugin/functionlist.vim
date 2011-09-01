@@ -334,7 +334,7 @@ endfunction
 function! s:Repos()
 	let l:llindex= line('.')
 	let l:llindex -= 1
-	if(!has_key(b:lookup[1],l:llindex)) 
+	if(!exists("b:lookup") || !has_key(b:lookup[1],l:llindex)) 
 		return
 	endif
 	let l:lineno = b:lookup[1][l:llindex]
