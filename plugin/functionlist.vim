@@ -1,4 +1,4 @@
-" Functiontracker plugin v1.6
+" Functionlist plugin
 "
 " Added autocommands for recent access ist so that user may go to a recent
 " item by pressing enter on it
@@ -83,6 +83,9 @@ function! s:iniflist()
 	if(exists("b:filelistrecentlist"))
 		let l:oldrecentlist = b:filelistrecentlist
 	endif
+	if(exists("b:filelistlinewhenclosing"))
+		let l:filelistlinewhenclosing = b:filelistlinewhenclosing
+	endif
 	setlocal spr
 	15 vnew 
 	"call matchadd('String','.')
@@ -107,6 +110,9 @@ function! s:iniflist()
 	let b:lookup = s:index()
 	call append(0,b:lookup[0])
 	exe 'normal gg'
+	if(exists("l:filelistlinewhenclosing"))
+		exe 'normal ' . l:filelistlinewhenclosing .'gg'
+	endif
 	setlocal nomodifiable
 	noremap <buffer> <silent> A :call <sid>Searchfor('a')<cr>
 	noremap <buffer> <silent> B :call <sid>Searchfor('b')<cr>
@@ -165,6 +171,7 @@ function! s:iniflist()
 	noremap <buffer> <silent> <C-R> :call <sid>Repos()<cr>
 	noremap <buffer> <silent> <C-M> :call <sid>Repos()<cr>
 	noremap <buffer> <silent> <2-leftrelease> :call <sid>Repos()<cr>
+	noremap <buffer> <silent> <Esc> :call <sid>toggle()<cr>
     augroup Flistautocommands
 		autocmd! * <buffer>
 		au BufEnter  <buffer>  call <sid>reindex()
@@ -219,6 +226,8 @@ function! s:toggle()
 			call s:iniflist()
 		else
 			call s:switch_wnd(t:flbuf)
+			let l:current_line = line('.')
+			call setbufvar(b:srcbuf,'filelistlinewhenclosing',l:current_line)
 			call s:switch_wnd(b:recbuf)
 			augroup Flistautocommands
 				autocmd! * <buffer>
@@ -249,7 +258,7 @@ endfunction
 function! s:oninsertchange()
 	if(exists("t:flbuf"))
 		let l:winnr = winnr()
-		call s:reindex()
+		"call s:reindex()
 		exe l:winnr. ' wincmd w'
 		call s:getcurrentfunction()
 		exe l:winnr. ' wincmd w'
@@ -345,6 +354,7 @@ function! s:Repos()
 	call s:switch_wnd(b:srcbuf)
 	call setpos('.',['.', l:lineno,0,0])
 	exe 'normal zz'
+	call s:toggle()
 endfunction
 
 
@@ -375,6 +385,7 @@ function! s:ReposRecent()
 		call s:switch_wnd(b:srcbuf)
 		call setpos('.',['.', l:lix,0,0])
 		exe 'normal zz'
+		call s:toggle()
 	endif
 endfunction
 

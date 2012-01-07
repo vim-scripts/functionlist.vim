@@ -1,13 +1,10 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=3681
 
-This plugin displays a list of all lines with word 'function' in current
-file/buffer. This list is sorted on function name.
+This plugin displays a list of all lines with word 'function' in current file/buffer. This list is sorted on function name.
 
-It also maintains a list of recently accessed functions at the top so that you can 
-switch between functions easily, This list is updated when the user navigates using 
-the function list or when the user enters or leaves insert mode while inside a function. 
+It also maintains a list of recently accessed functions at the top so that you can switch between functions easily, This list is updated when the user navigates to the function list window. The required function can be quickly reached in the list by pressing the first letter of the function. Pressing 'p' cycles through all the functions starting with 'p'.
 
-This Plugin is best suited for working with  long source code files with C style function defenitions.
+This Plugin is best suited for working with  long source code files with functions defined with 'function' keyword.
 
 screen shot http://i56.tinypic.com/11hdhxg.png 
 
